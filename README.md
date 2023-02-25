@@ -5,6 +5,8 @@
 - Clone or download the repository in the root of the active theme
 - Include _aleksandr_shatskikh/aleksandr_shatskikh.php in the functions.php
 
+* Note: that was the client's wish not to delive the code as a plugin.
+
 ## Requirements
 - Wordpress >5.6
 - PHP >7.4
