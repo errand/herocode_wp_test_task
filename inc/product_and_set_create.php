@@ -63,25 +63,21 @@ function heroCodeCreateSetAfterProductInserted($post_id, $post, $post_before) {
 /**
  * Update the Set Price when Product updates
  */
-add_action( 'post_updated', 'heroCodeUpdateSetPriceOnUpdate', 10, 3 );
 
-function heroCodeUpdateSetPriceOnUpdate($post_ID, $post_after, $post_before){
-    if('product' !== $post_before->post_type) {
-        return;
+add_action('updated_post_meta', 'heroCodeUpdateSetPriceOnUpdate', 0, 4);
+
+function heroCodeUpdateSetPriceOnUpdate($meta_id, $post_id, $meta_key, $meta_value) {
+    if( 'product_price' == $meta_key ) {
+        heroCodeUpdateSetPrice($post_id);
     }
-    heroCodeUpdateSetPrice($post_ID);
 }
 
 /**
  * Update the Set Price when Product deleted
  */
-add_action( 'after_delete_post', 'heroCodeUpdateSetPriceOnDelete', 10, 2 );
+add_action( 'trashed_post', 'heroCodeUpdateSetPriceOnDelete');
 
-function heroCodeUpdateSetPriceOnDelete( $post_id, $post ) {
-
-    if ( 'product' !== $post->post_type ) {
-        return;
-    }
+function heroCodeUpdateSetPriceOnDelete( $post_id ) {
     heroCodeUpdateSetPrice($post_id);
 }
 
@@ -162,7 +158,7 @@ function heroCodeCalculateTotalPriceInBrand(int $brand_id, mixed $discount = 0.2
  * Update Branded Set Price
  */
 
-function heroCodeUpdateSetPrice(int $post_id): void {
+function heroCodeUpdateSetPrice($post_id) {
     $product_brands = wp_get_post_terms($post_id, 'brands');
     $brand_id = $product_brands[0]->term_id ?: null;
     $branded_set = heroCodeGetPostsInBrand('set', $brand_id);
