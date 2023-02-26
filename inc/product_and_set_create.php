@@ -19,25 +19,18 @@ function shatskikhCreateSetAfterProductInserted($post_id, $post, $post_before) {
     }
 
     if (wp_get_post_terms($post_id, 'brands')) {
+
+        /**
+         * Get Brand data of the Product
+         */
         $product_brands = wp_get_post_terms($post_id, 'brands');
-        $brand_name = $product_brands[0]->name;
-        $brand_id = $product_brands[0]->term_id;
+        $brand_name = $product_brands[0]->name ?: null;
+        $brand_id = $product_brands[0]->term_id ?: null;
 
         /**
          * Let's sum all prices of Products in Set
          */
-        $products_in_set = get_posts([
-            'post_type' => 'product',
-            'numberposts' => -1,
-            'post_status'=>'publish',
-            'tax_query' => [
-                [
-                    'taxonomy' => 'brands',
-                    'field'    => 'term_id',
-                    'terms'    => $brand_id
-                ]
-            ],
-        ]);
+        $products_in_set = getPostsInBrand('product', $brand_id);
 
         $priceInSet = 0;
 
@@ -48,43 +41,29 @@ function shatskikhCreateSetAfterProductInserted($post_id, $post, $post_before) {
         /**
          * Let's delete previous Set of the same Brand
          */
-        $branded_set = get_posts([
-            'post_type' => 'set',
-            'numberposts' => -1,
-            'tax_query' => [
-                [
-                    'taxonomy' => 'brands',
-                    'field'    => 'term_id',
-                    'terms'    => $brand_id
-                ]
-            ],
-        ]);
+        $branded_set = getPostsInBrand('set', $brand_id);
 
-        foreach ($branded_set as $set) {
-            wp_delete_post($set->ID, true);
+        if($branded_set) {
+            update_post_meta( $branded_set[0]->ID, 'product_price', $priceInSet);
+        } else {
+            $newSetOptions = array(
+                'post_title' => 'Набор товаров: ' . $brand_name,
+                'post_content' => '',
+                'post_status' => 'publish',
+                'post_type' => 'set',
+                //'tax_input' => array( 'brands' => $brand_id ), // see bellow
+                'meta_input'   => array(
+                    'product_price' => ($priceInSet - $priceInSet * $discount),
+                ),
+            );
+
+            $newSetId = wp_insert_post($newSetOptions);
+
+            // ‘tax_input’ in the arguments only works on wp_insert_post if the function is being called by a user with “assign_terms” access
+            if($brand_id) {
+                wp_set_object_terms($newSetId, $brand_id, 'brands');
+            }
         }
-
-    } else {
-        $brand_id = null;
-        $brand_name = '';
-    }
-
-    $newSetOptions = array(
-        'post_title' => 'Набор товаров: ' . $brand_name,
-        'post_content' => '',
-        'post_status' => 'publish',
-        'post_type' => 'set',
-        //'tax_input' => array( 'brands' => $brand_id ), // see bellow
-        'meta_input'   => array(
-            'product_price' => ($priceInSet - $priceInSet * $discount),
-        ),
-    );
-
-    $newSetId = wp_insert_post($newSetOptions);
-
-    // ‘tax_input’ in the arguments only works on wp_insert_post if the function is being called by a user with “assign_terms” access
-    if($brand_id) {
-        wp_set_object_terms($newSetId, $brand_id, 'brands');
     }
 }
 
@@ -103,18 +82,7 @@ function shatskikhRewriteSetContent() {
 
             $product_brand = wp_get_post_terms($post->ID, 'brands');
             if($product_brand) {
-                $products_in_set = get_posts([
-                    'post_type' => 'product',
-                    'numberposts' => -1,
-                    'post_status'=>'publish',
-                    'tax_query' => [
-                        [
-                            'taxonomy' => 'brands',
-                            'field'    => 'term_id',
-                            'terms'    => $product_brand[0]->term_id
-                        ]
-                    ],
-                ]);
+                $products_in_set = getPostsInBrand('product', $product_brand[0]->term_id);
 
                 $content = '<h2>В данный набор входит:</h2>';
                 $content .= '<ul>';
@@ -135,4 +103,24 @@ function shatskikhRewriteSetContent() {
 
         return;
     }
+}
+
+/**
+ * Helper function to get Sets in Brand
+ */
+
+function getPostsInBrand(string $type, int $brand_id): array
+{
+    return get_posts([
+        'post_type' => $type,
+        'numberposts' => -1,
+        'post_status'=>'publish',
+        'tax_query' => [
+            [
+                'taxonomy' => 'brands',
+                'field'    => 'term_id',
+                'terms'    => $brand_id
+            ]
+        ],
+    ]);
 }
