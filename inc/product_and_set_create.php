@@ -97,21 +97,24 @@ function heroCodeRewriteSetContent() {
             if($product_brand) {
                 $products_in_set = heroCodeGetPostsInBrand('product', $product_brand[0]->term_id);
 
-                $content = '<h2>В данный набор входит:</h2>';
-                $content .= '<ul>';
+                if($products_in_set) {
+                    $content = '<h2>В данный набор входит:</h2>';
+                    $content .= '<ul>';
 
-                foreach ($products_in_set as $product) {
-                    $content .= '<li>' . $product->post_title . '</li>';
+                    foreach ($products_in_set as $product) {
+                        $content .= '<li><a href="'.get_permalink($product->ID).'">' . $product->post_title . '</a></li>';
+                    }
+                    $content .= '</ul>';
+                    $content .= '<hr/>';
+                    $content .= '<h5>Итоговая стоимость со скидкой</h5>';
+                    $content .= '<h3>' . number_format(get_post_meta($post->ID, 'product_price')[0]) . '</h3>';
+                } else {
+                    $content = __("This set doesn't contain Products");
                 }
-                $content .= '</ul>';
-                $content .= '<hr/>';
-                $content .= '<h5>Итоговая стоимость со скидкой</h5>';
-                $content .= '<h3>' . number_format(get_post_meta($post->ID, 'product_price')[0]) . '</h3>';
-            } else {
-                $content = __("This set doesn't contain Products");
+
+                return $content;
             }
 
-            return $content;
         }
 
         return;
