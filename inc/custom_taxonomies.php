@@ -4,18 +4,18 @@
  * Custom Taxonomies registration
  */
 
-add_action( 'init', 'shatskikhRegisterCustomTaxonomies' );
+add_action( 'init', 'heroCodeRegisterCustomTaxonomies' );
 
-function shatskikhRegisterCustomTaxonomies() {
+function heroCodeRegisterCustomTaxonomies() {
 
     $labels = [
-        "name" => __( "Бренды", 'shatskikh' ),
-        "singular_name" => __( "Бренд", 'shatskikh' ),
+        "name" => __( "Бренды", 'heroCode' ),
+        "singular_name" => __( "Бренд", 'heroCode' ),
     ];
 
 
     $args = [
-        "label" => __( "Бренды", 'shatskikh' ),
+        "label" => __( "Бренды", 'heroCode' ),
         "labels" => $labels,
         "public" => true,
         "publicly_queryable" => true,

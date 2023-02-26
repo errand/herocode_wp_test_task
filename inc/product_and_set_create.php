@@ -4,11 +4,9 @@
  * This file contain the logic of creating the Product which triggers creation of Set.
  */
 
-add_action( 'wp_after_insert_post', 'shatskikhCreateSetAfterProductInserted', 10, 3 );
+add_action( 'wp_after_insert_post', 'heroCodeCreateSetAfterProductInserted', 10, 3 );
 
-function shatskikhCreateSetAfterProductInserted($post_id, $post, $post_before) {
-
-    $discount = 0.2;
+function heroCodeCreateSetAfterProductInserted($post_id, $post, $post_before) {
 
     if( 'product' !== $post->post_type) {
         return;
@@ -30,18 +28,12 @@ function shatskikhCreateSetAfterProductInserted($post_id, $post, $post_before) {
         /**
          * Let's sum all prices of Products in Set
          */
-        $products_in_set = getPostsInBrand('product', $brand_id);
-
-        $priceInSet = 0;
-
-        foreach ($products_in_set as $product) {
-            $priceInSet += get_post_meta($product->ID, 'product_price')[0];
-        }
+        $priceInSet = heroCodeCalculateTotalPriceInBrand($brand_id);
 
         /**
-         * Let's delete previous Set of the same Brand
+         * Update previous Set of the same Brand if exist
          */
-        $branded_set = getPostsInBrand('set', $brand_id);
+        $branded_set = heroCodeGetPostsInBrand('set', $brand_id);
 
         if($branded_set) {
             update_post_meta( $branded_set[0]->ID, 'product_price', $priceInSet);
@@ -53,7 +45,7 @@ function shatskikhCreateSetAfterProductInserted($post_id, $post, $post_before) {
                 'post_type' => 'set',
                 //'tax_input' => array( 'brands' => $brand_id ), // see bellow
                 'meta_input'   => array(
-                    'product_price' => ($priceInSet - $priceInSet * $discount),
+                    'product_price' => $priceInSet,
                 ),
             );
 
@@ -69,12 +61,37 @@ function shatskikhCreateSetAfterProductInserted($post_id, $post, $post_before) {
 
 
 /**
+ * Update the Set Price when Product updates
+ */
+add_action( 'post_updated', 'heroCodeUpdateSetPriceOnUpdate', 10, 3 );
+
+function heroCodeUpdateSetPriceOnUpdate($post_ID, $post_after, $post_before){
+    if('product' !== $post_before->post_type) {
+        return;
+    }
+    heroCodeUpdateSetPrice($post_ID);
+}
+
+/**
+ * Update the Set Price when Product deleted
+ */
+add_action( 'after_delete_post', 'heroCodeUpdateSetPriceOnDelete', 10, 2 );
+
+function heroCodeUpdateSetPriceOnDelete( $post_id, $post ) {
+
+    if ( 'product' !== $post->post_type ) {
+        return;
+    }
+    heroCodeUpdateSetPrice($post_id);
+}
+
+/**
  * Display the list of the Products in Set
  */
 
-add_filter('the_content', 'shatskikhRewriteSetContent');
+add_filter('the_content', 'heroCodeRewriteSetContent');
 
-function shatskikhRewriteSetContent() {
+function heroCodeRewriteSetContent() {
     global $post;
 
     if( is_singular() ) {
@@ -82,7 +99,7 @@ function shatskikhRewriteSetContent() {
 
             $product_brand = wp_get_post_terms($post->ID, 'brands');
             if($product_brand) {
-                $products_in_set = getPostsInBrand('product', $product_brand[0]->term_id);
+                $products_in_set = heroCodeGetPostsInBrand('product', $product_brand[0]->term_id);
 
                 $content = '<h2>В данный набор входит:</h2>';
                 $content .= '<ul>';
@@ -109,7 +126,7 @@ function shatskikhRewriteSetContent() {
  * Helper function to get Sets in Brand
  */
 
-function getPostsInBrand(string $type, int $brand_id): array
+function heroCodeGetPostsInBrand(string $type, int $brand_id): array
 {
     return get_posts([
         'post_type' => $type,
@@ -123,4 +140,35 @@ function getPostsInBrand(string $type, int $brand_id): array
             ]
         ],
     ]);
+}
+
+/**
+ * Calculate total Price in the Set with discount
+ */
+
+function heroCodeCalculateTotalPriceInBrand(int $brand_id, mixed $discount = 0.2): mixed {
+    $products_in_set = heroCodeGetPostsInBrand('product', $brand_id);
+
+    $priceInSet = 0;
+
+    foreach ($products_in_set as $product) {
+        $priceInSet += get_post_meta($product->ID, 'product_price')[0];
+    }
+
+    return $priceInSet - $priceInSet * $discount;
+}
+
+/**
+ * Update Branded Set Price
+ */
+
+function heroCodeUpdateSetPrice(int $post_id): void {
+    $product_brands = wp_get_post_terms($post_id, 'brands');
+    $brand_id = $product_brands[0]->term_id ?: null;
+    $branded_set = heroCodeGetPostsInBrand('set', $brand_id);
+    $priceInSet = heroCodeCalculateTotalPriceInBrand($brand_id);
+
+    if($branded_set) {
+        update_post_meta( $branded_set[0]->ID, 'product_price', $priceInSet);
+    }
 }

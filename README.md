@@ -61,7 +61,8 @@ Note: that was the client's wish not to delive the code NOT as a plugin.
 ✅ Custom Guttenberg plugin which saves meta Price field
 
 ✅ The logic when creating the Product post with Price and Brand tag triggers two things:
-- deleting all the previously created Sets in the same Brand term
+- ~~deleting all the previously created Sets in the same Brand term~~
+- update the Set Price if Product updated or Deleted
 - creating the new Set where in the Price field saves the sum of the prices of the Products in the same Brand term - 20%
   
 ✅ Rewrite the Set content to display the list of the Product with the same Brand term and the total price of the Products.

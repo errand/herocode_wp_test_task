@@ -4,8 +4,8 @@
  * Here we register Custom Guttenberg blocks
  */
 
-add_action('init', 'shatskikhRegisterCustomBlock');
-function shatskikhRegisterCustomBlock()
+add_action('init', 'heroCodeRegisterCustomBlock');
+function heroCodeRegisterCustomBlock()
 {
     // Check if this is the intended custom post type
     if (is_admin()) {
