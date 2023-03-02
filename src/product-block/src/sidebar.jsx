@@ -7,6 +7,7 @@ const CustomTextControl = compose(
 	withDispatch( function( dispatch, props ) {
 		return {
 			setMetaValue: function( value ) {
+
 				dispatch( 'core/editor' ).editPost( { meta: { [props.metaKey]: value } } );
 			}
 		}
@@ -37,7 +38,7 @@ export default function Sidebar(){
 				title="Price"
 				className="product-panel"
 			>
-				<CustomTextControl metaKey="product_price" required />
+				<CustomTextControl metaKey="product_price" />
 			</PluginDocumentSettingPanel>
 		</>
 	)
