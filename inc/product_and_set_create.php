@@ -24,6 +24,12 @@ function heroCodeCreateSetAfterProductInserted($post_id, $post, $post_before) {
         $product_brands = wp_get_post_terms($post_id, 'brands');
         $brand_name = $product_brands[0]->name ?: null;
         $brand_id = $product_brands[0]->term_id ?: null;
+        if($product_brands) {
+            $products_in_set = heroCodeGetPostsInBrand('product', $product_brands[0]->term_id);
+            if($products_in_set < 2) {
+                return;
+            }
+        }
 
         /**
          * Let's sum all prices of Products in Set
